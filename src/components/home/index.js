@@ -1,6 +1,8 @@
 import { Fragment, React, useEffect, useState } from "react";
-import { Result, Layout, Input, Space, Typography } from "antd";
-import { getWeather, getGeoCode } from "../utils/weatherDetailsApi";
+import { Result, Layout, Input, AutoComplete, Space, Typography } from "antd";
+import { getWeather, getGeoCode } from "../../utils/weatherDetailsApi";
+import cities from "../../assets/cities.json";
+import countries from "../../assets/countryList.json";
 
 const Home = () => {
   const [location, setLocation] = useState(false);
@@ -10,6 +12,7 @@ const Home = () => {
     "Please provide location access and refresh the page"
   );
   const [weather, setWeather] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState("India");
 
   const { Header, Content, Footer } = Layout;
   const { Search } = Input;
@@ -24,7 +27,10 @@ const Home = () => {
     });
   };
 
-  const onSearch = (value) => setLocation({ place: value });
+  const onSearch = (value) => {
+    console.log(value);
+    // setLocation({ place: value })
+  };
 
   //checking location service is available
 
@@ -67,11 +73,48 @@ const Home = () => {
       <Content className="content-container">
         <div className="site-layout-content">
           <Space size="large" direction="vertical">
-            <Search
-              placeholder="Search a city"
-              onSearch={onSearch}
-              enterButton
-            />
+            <AutoComplete
+              options={Object.keys(cities).map((countryName) => {
+                return { value: countryName, label: countryName };
+              })}
+              filterOption={(inputValue, option) => {
+                return (
+                  option.label
+                    .toUpperCase()
+                    .indexOf(inputValue.toUpperCase()) !== -1
+                );
+              }}
+              onSelect={(value) => {
+                setSelectedCountry(value);
+              }}
+            >
+              <Search
+                placeholder="Select Country"
+                onSearch={onSearch}
+                enterButton
+              />
+            </AutoComplete>
+            <AutoComplete
+              options={cities[selectedCountry].map((city) => {
+                return { value: city, label: city };
+              })}
+              filterOption={(inputValue, option) => {
+                return (
+                  option.label
+                    .toUpperCase()
+                    .indexOf(inputValue.toUpperCase()) !== -1
+                );
+              }}
+              onSelect={(value) => {
+                setSelectedCountry(value);
+              }}
+            >
+              <Search
+                placeholder="Search a city"
+                onSearch={onSearch}
+                enterButton
+              />
+            </AutoComplete>
 
             {placeError ? (
               <Result status="warning" title={warningMessage} />
