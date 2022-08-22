@@ -1,8 +1,22 @@
 import { Fragment, React, useEffect, useState } from "react";
-import { Result, Layout, Input, AutoComplete, Space, Typography } from "antd";
+import {
+  Result,
+  Button,
+  Tooltip,
+  Layout,
+  AutoComplete,
+  Space,
+  Typography,
+} from "antd";
+import {
+  SearchOutlined,
+  ArrowDownOutlined,
+  ArrowUpOutlined,
+} from "@ant-design/icons";
 import { getWeather, getGeoCode } from "../../utils/weatherDetailsApi";
 import cities from "../../assets/cities.json";
 import countries from "../../assets/countryList.json";
+import Loading from "../loading";
 
 const Home = () => {
   const [location, setLocation] = useState(false);
@@ -12,24 +26,39 @@ const Home = () => {
     "Please provide location access and refresh the page"
   );
   const [weather, setWeather] = useState(false);
-  const [selectedCountry, setSelectedCountry] = useState("India");
+  const [selectedCity, setSelectedCity] = useState(null);
+  const [isLoading, setIsLoding] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState({
+    name: "India",
+    isoCode: "IN",
+  });
 
   const { Header, Content, Footer } = Layout;
-  const { Search } = Input;
   const { Title } = Typography;
 
   const getCurrentLocation = (navigator) => {
     navigator.geolocation.getCurrentPosition(async (position) => {
       let latitude = await position.coords.latitude;
       let longitude = await position.coords.longitude;
-      await setLocation({ latitude, longitude });
       await setLocationAccess(true);
+      await setLocation({ latitude, longitude });
+      await setLoading();
     });
   };
 
-  const onSearch = (value) => {
-    console.log(value);
-    // setLocation({ place: value })
+  const setLoading = () => {
+    setIsLoding(true);
+    setTimeout(() => {
+      setIsLoding(false);
+    }, 2000);
+  };
+
+  const selectCity = () => {
+    let city = {};
+    city.place = selectedCity + "," + selectedCountry.isoCode;
+    city.name = selectedCity;
+    console.log(city);
+    setLocation(city);
   };
 
   //checking location service is available
@@ -42,7 +71,7 @@ const Home = () => {
 
   useEffect(() => {
     if (location)
-      if (Object.keys(location).length > 1) {
+      if (Object.keys(location).includes("latitude")) {
         // runs when location state has latitude and longtitude values
         getWeather(location).then((result) => {
           setWeather(result.data);
@@ -50,7 +79,6 @@ const Home = () => {
       } else {
         // runs when location state has city name and find its cordinates
         getGeoCode(location).then((result) => {
-          console.log(result.data.length);
           if (result.data.length > 0) {
             setPlaceError(false);
             setLocation({
@@ -68,91 +96,130 @@ const Home = () => {
   return (
     <Layout className="layout">
       <Header>
-        <div className="logo" />
+        <div className="logo">
+          <Title level={3} style={{ color: "#b6c4d1" }}>
+            TODAY'S WEATHER
+          </Title>
+        </div>
       </Header>
       <Content className="content-container">
         <div className="site-layout-content">
           <Space size="large" direction="vertical">
-            <AutoComplete
-              options={Object.keys(cities).map((countryName) => {
-                return { value: countryName, label: countryName };
-              })}
-              filterOption={(inputValue, option) => {
-                return (
-                  option.label
-                    .toUpperCase()
-                    .indexOf(inputValue.toUpperCase()) !== -1
-                );
-              }}
-              onSelect={(value) => {
-                setSelectedCountry(value);
-              }}
-            >
-              <Search
-                placeholder="Select Country"
-                onSearch={onSearch}
-                enterButton
+            <Space size="large" direction="horizontal">
+              <AutoComplete
+                options={Object.keys(cities).map((countryName) => {
+                  return { value: countryName, label: countryName };
+                })}
+                filterOption={(inputValue, option) => {
+                  return (
+                    option.label
+                      .toUpperCase()
+                      .indexOf(inputValue.toUpperCase()) !== -1
+                  );
+                }}
+                placeholder="Select a country"
+                onSelect={(value) => {
+                  let country = countries.filter((item) => {
+                    return item.name === value;
+                  });
+                  setSelectedCountry(country[0]);
+                  // setSelectedCity(null);
+                }}
+                allowClear
+                style={{ width: 200 }}
               />
-            </AutoComplete>
-            <AutoComplete
-              options={cities[selectedCountry].map((city) => {
-                return { value: city, label: city };
-              })}
-              filterOption={(inputValue, option) => {
-                return (
-                  option.label
-                    .toUpperCase()
-                    .indexOf(inputValue.toUpperCase()) !== -1
-                );
-              }}
-              onSelect={(value) => {
-                setSelectedCountry(value);
-              }}
-            >
-              <Search
-                placeholder="Search a city"
-                onSearch={onSearch}
-                enterButton
+              <AutoComplete
+                options={cities[selectedCountry.name].map((city) => {
+                  return { value: city, label: city };
+                })}
+                allowClear
+                filterOption={(inputValue, option) => {
+                  return (
+                    option.label
+                      .toUpperCase()
+                      .indexOf(inputValue.toUpperCase()) !== -1
+                  );
+                }}
+                onChange={(value) => setSelectedCity(value)}
+                onSelect={(value) => setSelectedCity(value)}
+                style={{ width: 200 }}
+                placeholder="Select a city"
               />
-            </AutoComplete>
-
-            {placeError ? (
-              <Result status="warning" title={warningMessage} />
-            ) : !location && !locationAccess ? (
-              <Result status="warning" title={warningMessage} />
-            ) : (
-              weather && (
-                <Fragment>
-                  <Title level={2}>
-                    {weather.name}, {weather.sys.country}
-                  </Title>
-                  <Space direction="horizontal">
-                    <Title level={2}>{weather.main.temp} ℃, </Title>
-                    <Title level={5}>
-                      feels like : {weather.main.feels_like} ℃
-                    </Title>
-                  </Space>
-                  <Space direction="horizontal">
-                    <Title level={5}>
-                      Humidity : {weather.main.humidity} %,{" "}
-                    </Title>
-                    <Title level={5}>
-                      Visibility : {weather.visibility / 1000} km
-                    </Title>
-                  </Space>
-                  <Space direction="horizontal">
-                    <Title level={5}>Wind : {weather.wind.speed} m/s , </Title>
-                    <Title level={5}>{weather.wind.deg} °</Title>
-                  </Space>
-                </Fragment>
-              )
-            )}
+              <Tooltip title="search">
+                <Button
+                  type="primary"
+                  shape="circle"
+                  icon={<SearchOutlined />}
+                  onClick={() => {
+                    selectCity();
+                    setLoading();
+                  }}
+                />
+              </Tooltip>
+            </Space>
+            <Space
+              size="large"
+              style={{ display: "flex" }}
+              direction="vertical"
+            >
+              {isLoading ? (
+                <Loading />
+              ) : placeError ? (
+                <Result status="warning" title={warningMessage} />
+              ) : !location && !locationAccess ? (
+                <Result status="warning" title={warningMessage} />
+              ) : (
+                weather && (
+                  <Fragment>
+                    <Space
+                      size="large"
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-around",
+                      }}
+                      direction="horizontal"
+                    >
+                      <Title level={2}>
+                        {selectedCity ? selectedCity : weather.name},{" "}
+                        {weather.sys.country}
+                      </Title>
+                      <div>
+                        <ArrowUpOutlined />
+                        <ArrowDownOutlined />
+                      </div>
+                    </Space>
+                    <Space direction="horizontal">
+                      <Title level={2}>{weather.main.temp} ℃, </Title>
+                      <Title level={5}>
+                        feels like : {weather.main.feels_like} ℃
+                      </Title>
+                    </Space>
+                    <Space direction="horizontal">
+                      <Title level={5}>
+                        Humidity : {weather.main.humidity} %,{" "}
+                      </Title>
+                      <Title level={5}>
+                        Visibility : {weather.visibility / 1000} km
+                      </Title>
+                    </Space>
+                    <Space direction="horizontal">
+                      <Title level={5}>
+                        Wind : {weather.wind.speed} m/s ,{" "}
+                      </Title>
+                      <Title level={5}>{weather.wind.deg} °</Title>
+                    </Space>
+                  </Fragment>
+                )
+              )}
+            </Space>
           </Space>
         </div>
       </Content>
       <Footer
         style={{
+          background: "#001529",
           textAlign: "center",
+          color: "rgb(182, 196, 209)",
         }}
       >
         Ant Design ©2018 Created by Ant UED

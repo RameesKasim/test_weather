@@ -1,14 +1,20 @@
 @import "antd/dist/antd.min.css";
 
+.content-container {
+  background-image: url("./assets/backgroundImage.jpg ");
+}
+
 .site-layout-content {
   min-height: 280px;
-  padding: 24px;
+  padding: 24px 36px;
   background: #fff;
   min-width: 450px;
+  display: flex;
+  border-radius: 3%;
+  flex-direction: column;
 }
 #components-layout-demo-top .logo {
   float: left;
-  width: 120px;
   height: 31px;
   margin: 16px 24px 16px 0;
   background: rgba(255, 255, 255, 0.3);
@@ -20,7 +26,6 @@
 
 .logo {
   float: left;
-  width: 120px;
   height: 31px;
   margin: 16px 24px 16px 0;
   background: rgba(255, 255, 255, 0.3);
@@ -35,6 +40,10 @@
 
 .layout {
   min-height: 100vh;
+}
+
+.ant-select-selector {
+  text-align: initial;
 }
 
 @media screen and (min-width: 992px) {
