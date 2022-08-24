@@ -13,37 +13,51 @@ import {
   ArrowDownOutlined,
   ArrowUpOutlined,
 } from "@ant-design/icons";
-import { getWeather, getGeoCode } from "../../utils/weatherDetailsApi";
+import {
+  getWeather,
+  getGeoCode,
+  getForecast,
+} from "../../utils/weatherDetailsApi";
 import cities from "../../assets/cities.json";
 import countries from "../../assets/countryList.json";
+import humidityIcon from "../../assets/humidity.jpg";
 import Loading from "../loading";
+import { useGeolocated } from "react-geolocated";
 
 const Home = () => {
   const [location, setLocation] = useState(false);
-  const [locationAccess, setLocationAccess] = useState(false);
+  const [locationAccess, setLocationAccess] = useState(true);
   const [placeError, setPlaceError] = useState(false);
-  const [warningMessage, setWarningMessage] = useState(
-    "Please provide location access and refresh the page"
-  );
+  const [cordError, setCordError] = useState(false);
+  const [warningMessage, setWarningMessage] = useState("");
   const [weather, setWeather] = useState(false);
+  const [forecastList, setForecastList] = useState([]);
+  const [currentDate, setCurrentDate] = useState({});
   const [selectedCity, setSelectedCity] = useState(null);
   const [isLoading, setIsLoding] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState({
     name: "India",
     isoCode: "IN",
   });
+  const [weatherIconUrl, setWeatherIconUrl] = useState("");
+  const { coords, isGeolocationAvailable, isGeolocationEnabled } =
+    useGeolocated({
+      positionOptions: {
+        enableHighAccuracy: false,
+      },
+      userDecisionTimeout: 5000,
+    });
 
   const { Header, Content, Footer } = Layout;
-  const { Title } = Typography;
+  const { Title, Text } = Typography;
 
-  const getCurrentLocation = (navigator) => {
-    navigator.geolocation.getCurrentPosition(async (position) => {
-      let latitude = await position.coords.latitude;
-      let longitude = await position.coords.longitude;
-      await setLocationAccess(true);
-      await setLocation({ latitude, longitude });
-      await setLoading();
-    });
+  const getCurrentLocation = () => {
+    console.log(coords);
+    let latitude = coords.latitude;
+    let longitude = coords.longitude;
+    setLocationAccess(true);
+    setLocation({ latitude, longitude });
+    setLoading();
   };
 
   const setLoading = () => {
@@ -57,41 +71,98 @@ const Home = () => {
     let city = {};
     city.place = selectedCity + "," + selectedCountry.isoCode;
     city.name = selectedCity;
-    console.log(city);
     setLocation(city);
+  };
+
+  const getDate = (date) => {
+    let localDate = {};
+    localDate.day = new Date(date).toLocaleDateString("default", {
+      weekday: "long",
+    });
+    localDate.date = new Date(date).toLocaleDateString();
+    setCurrentDate(localDate);
+  };
+
+  const getImageUrl = (image) =>
+    `http://openweathermap.org/img/wn/${image}@2x.png`;
+
+  const getWeekDay = (date) =>
+    new Date(date).toLocaleDateString("default", {
+      weekday: "short",
+    });
+
+  const geoLoacationError = () => {
+    setWarningMessage("Your browser does not support Geolocation");
+    setLocationAccess("false");
+  };
+
+  const loacationAccessError = () => {
+    setWarningMessage("Please provide location access and refresh the page");
+    setLocationAccess("false");
+  };
+
+  const cordAccessError = () => {
+    setWarningMessage("Getting the location data");
+    setCordError("true");
   };
 
   //checking location service is available
 
   useEffect(() => {
-    if ("geolocation" in navigator) {
-      getCurrentLocation(navigator);
-    }
-  }, []);
+    !isGeolocationAvailable
+      ? geoLoacationError()
+      : !isGeolocationEnabled
+      ? loacationAccessError()
+      : coords
+      ? getCurrentLocation()
+      : cordAccessError();
+  }, [cordError]);
 
   useEffect(() => {
-    if (location)
+    if (location) {
+      console.log("hai");
+      debugger;
       if (Object.keys(location).includes("latitude")) {
         // runs when location state has latitude and longtitude values
-        getWeather(location).then((result) => {
-          setWeather(result.data);
-        });
+        getWeather(location)
+          .then((result) => {
+            console.log(result.data);
+            setWeather(result.data);
+            setWeatherIconUrl(getImageUrl(result.data.weather[0].icon));
+            getForecast(location)
+              .then((result) => {
+                console.log(result.data);
+                setForecastList(result.data.list);
+                getDate(result.data.list[0].dt_txt);
+              })
+              .catch((error) => {
+                console.log(error);
+              });
+          })
+          .catch((error) => {
+            console.log(error);
+          });
       } else {
         // runs when location state has city name and find its cordinates
-        getGeoCode(location).then((result) => {
-          if (result.data.length > 0) {
-            setPlaceError(false);
-            setLocation({
-              longitude: result.data[0].lon,
-              latitude: result.data[0].lat,
-            });
-          } else {
-            setWarningMessage("Provide a valid City");
-            setPlaceError(true);
-          }
-        });
+        getGeoCode(location)
+          .then((result) => {
+            if (result.data.length > 0) {
+              setPlaceError(false);
+              setLocation({
+                longitude: result.data[0].lon,
+                latitude: result.data[0].lat,
+              });
+            } else {
+              setWarningMessage("Provide a valid City");
+              setPlaceError(true);
+            }
+          })
+          .catch((error) => {
+            console.log(error);
+          });
       }
-  }, [location]);
+    }
+  }, []);
 
   return (
     <Layout className="layout">
@@ -164,10 +235,10 @@ const Home = () => {
             >
               {isLoading ? (
                 <Loading />
-              ) : placeError ? (
+              ) : !locationAccess ? (
                 <Result status="warning" title={warningMessage} />
-              ) : !location && !locationAccess ? (
-                <Result status="warning" title={warningMessage} />
+              ) : cordError ? (
+                <Result title={warningMessage} />
               ) : (
                 weather && (
                   <Fragment>
@@ -183,30 +254,63 @@ const Home = () => {
                         {selectedCity ? selectedCity : weather.name},{" "}
                         {weather.sys.country}
                       </Title>
-                      <div>
-                        <ArrowUpOutlined />
-                        <ArrowDownOutlined />
+                      <Space size="small" direction="vertical">
+                        <Space size="small" direction="horizontal">
+                          <span>
+                            <ArrowUpOutlined /> {weather.main.temp_min}℃
+                          </span>
+                          <span>
+                            <ArrowDownOutlined /> {weather.main.temp_max}℃
+                          </span>
+                        </Space>
+                        <Text type="secondary" level={5}>
+                          feels like : {weather.main.feels_like} ℃
+                        </Text>
+                      </Space>
+                    </Space>
+                    <Space
+                      size="large"
+                      style={{ display: "flex" }}
+                      direction="horizontal"
+                    >
+                      <div
+                        style={{
+                          alignItems: "baseline",
+                          display: "flex",
+                          flexDirection: "column",
+                        }}
+                      >
+                        <Text type="secondary">{currentDate.day}</Text>
+                        <Text type="secondary" level={5}>
+                          {currentDate.date}
+                        </Text>
+                        <Text type="secondary" level={5}>
+                          Wind : {weather.wind.speed} m/s , {weather.wind.deg} °
+                        </Text>
+                        <Text type="secondary" level={5}>
+                          <img
+                            src={humidityIcon}
+                            style={{ width: "22px" }}
+                            alt="humidityIcon"
+                          />
+                          {" " + weather.main.humidity} %
+                        </Text>
                       </div>
-                    </Space>
-                    <Space direction="horizontal">
-                      <Title level={2}>{weather.main.temp} ℃, </Title>
-                      <Title level={5}>
-                        feels like : {weather.main.feels_like} ℃
-                      </Title>
-                    </Space>
-                    <Space direction="horizontal">
-                      <Title level={5}>
-                        Humidity : {weather.main.humidity} %,{" "}
-                      </Title>
-                      <Title level={5}>
-                        Visibility : {weather.visibility / 1000} km
-                      </Title>
-                    </Space>
-                    <Space direction="horizontal">
-                      <Title level={5}>
-                        Wind : {weather.wind.speed} m/s ,{" "}
-                      </Title>
-                      <Title level={5}>{weather.wind.deg} °</Title>
+                      <Space direction="horizontal">
+                        <Space size="small" direction="vertical">
+                          <img
+                            src={weatherIconUrl}
+                            alt="weatherIcon"
+                            style={{ height: "130px" }}
+                          />
+                          <Text type="secondary" level={5}>
+                            {weather.weather[0].description}
+                          </Text>
+                        </Space>
+                        <div style={{ height: "130px", fontSize: "3rem" }}>
+                          <div>{weather.main.temp} ℃</div>
+                        </div>
+                      </Space>
                     </Space>
                   </Fragment>
                 )
@@ -214,6 +318,26 @@ const Home = () => {
             </Space>
           </Space>
         </div>
+        {forecastList.length > 0 && (
+          <div className="sub-content-container">
+            <div className="sub-content">
+              {forecastList.map((item, key) => {
+                if (key % 8 === 0) {
+                  return (
+                    <div className="forecast-item" key={key}>
+                      <Text>{getWeekDay(item.dt_txt)}</Text>
+                      <img
+                        src={getImageUrl(item.weather[0].icon)}
+                        alt={`weather forcast ${key}`}
+                      />
+                      <Text>{item.main.temp} ℃</Text>
+                    </div>
+                  );
+                }
+              })}
+            </div>
+          </div>
+        )}
       </Content>
       <Footer
         style={{

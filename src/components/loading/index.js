@@ -12,7 +12,7 @@ const Loading = () => {
     />
   );
 
-  return <Spin indicator={antIcon} />;
+  return <Spin tip="Loading..." indicator={antIcon}></Spin>;
 };
 
 export default Loading;

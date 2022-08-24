@@ -2,6 +2,12 @@
 
 .content-container {
   background-image: url("./assets/backgroundImage.jpg ");
+  display: flex;
+  flex-direction: column;
+}
+
+.sub-content-container {
+  padding: 1rem 0;
 }
 
 .site-layout-content {
@@ -10,9 +16,42 @@
   background: #fff;
   min-width: 450px;
   display: flex;
-  border-radius: 3%;
+  border-radius: 10px;
+  flex-direction: column;
+  box-shadow: rgb(0 0 0 / 20%) 0px 2px 1px -1px,
+    rgb(0 0 0 / 14%) 0px 1px 1px 0px, rgb(0 0 0 / 12%) 0px 1px 3px 0px;
+  overflow: scroll;
+  -ms-overflow-style: none; /* Edge, Internet Explorer */
+  scrollbar-width: none; /* Firefox */
+}
+
+.site-layout-content::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.sub-content {
+  padding: 24px 36px;
+  background: #fff;
+  min-width: 450px;
+  display: flex;
+  border-radius: 10px;
+  justify-content: space-between;
+  box-shadow: rgb(0 0 0 / 20%) 0px 2px 1px -1px,
+    rgb(0 0 0 / 14%) 0px 1px 1px 0px, rgb(0 0 0 / 12%) 0px 1px 3px 0px;
+  overflow: scroll;
+  -ms-overflow-style: none; /* Edge, Internet Explorer */
+  scrollbar-width: none; /* Firefox */
+}
+
+.sub-content::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.forecast-item {
+  display: flex;
   flex-direction: column;
 }
+
 #components-layout-demo-top .logo {
   float: left;
   height: 31px;
