@@ -166,7 +166,7 @@ const Home = () => {
           });
       }
     }
-  }, []);
+  }, [location]);
 
   return (
     <Layout className="layout">
