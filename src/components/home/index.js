@@ -34,6 +34,7 @@ const Home = () => {
   const [forecastList, setForecastList] = useState([]);
   const [currentDate, setCurrentDate] = useState({});
   const [selectedCity, setSelectedCity] = useState(null);
+  const [cityWithCountry, setCityWithCountry] = useState({});
   const [isLoading, setIsLoding] = useState(false);
   const [selectedCountry, setSelectedCountry] = useState({
     name: "India",
@@ -71,6 +72,10 @@ const Home = () => {
     let city = {};
     city.place = selectedCity + "," + selectedCountry.isoCode;
     city.name = selectedCity;
+    setCityWithCountry({
+      city: selectedCity,
+      countryCode: selectedCountry.isoCode,
+    });
     setLocation(city);
   };
 
@@ -138,6 +143,7 @@ const Home = () => {
                 console.log(result.data);
                 setForecastList(result.data.list);
                 getDate(result.data.list[0].dt_txt);
+                setCityWithCountry({});
               })
               .catch((error) => {
                 console.log(error);
@@ -255,8 +261,11 @@ const Home = () => {
                       direction="horizontal"
                     >
                       <Title level={2}>
-                        {selectedCity ? selectedCity : weather.name},{" "}
-                        {weather.sys.country}
+                        {Object.keys(setCityWithCountry).length > 0
+                          ? cityWithCountry.city +
+                            ", " +
+                            cityWithCountry.countryCode
+                          : weather.name + ", " + weather.sys.country}
                       </Title>
                       <Space size="small" direction="vertical">
                         <Space size="small" direction="horizontal">
