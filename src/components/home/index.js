@@ -26,7 +26,7 @@ import { useGeolocated } from "react-geolocated";
 
 const Home = () => {
   const [location, setLocation] = useState(false);
-  const [locationAccess, setLocationAccess] = useState(true);
+  const [locationAccess, setLocationAccess] = useState(false);
   const [placeError, setPlaceError] = useState(false);
   const [cordError, setCordError] = useState(false);
   const [warningMessage, setWarningMessage] = useState("");
@@ -52,10 +52,10 @@ const Home = () => {
   const { Title, Text } = Typography;
 
   const getCurrentLocation = () => {
-    console.log(coords);
     let latitude = coords.latitude;
     let longitude = coords.longitude;
     setLocationAccess(true);
+    setCordError(false);
     setLocation({ latitude, longitude });
     setLoading();
   };
@@ -91,37 +91,41 @@ const Home = () => {
       weekday: "short",
     });
 
-  const geoLoacationError = () => {
+  const geoLocationError = () => {
     setWarningMessage("Your browser does not support Geolocation");
-    setLocationAccess("false");
+    setLocationAccess(false);
   };
 
-  const loacationAccessError = () => {
+  const locationAccessError = () => {
     setWarningMessage("Please provide location access and refresh the page");
-    setLocationAccess("false");
+    setLocationAccess(false);
   };
 
   const cordAccessError = () => {
     setWarningMessage("Getting the location data");
-    setCordError("true");
+    setCordError(true);
+    setLocationAccess(true);
   };
 
   //checking location service is available
 
   useEffect(() => {
-    !isGeolocationAvailable
-      ? geoLoacationError()
-      : !isGeolocationEnabled
-      ? loacationAccessError()
-      : coords
-      ? getCurrentLocation()
-      : cordAccessError();
-  }, [cordError]);
+    if (!locationAccess) {
+      !isGeolocationAvailable
+        ? geoLocationError()
+        : !isGeolocationEnabled
+        ? locationAccessError()
+        : coords
+        ? getCurrentLocation()
+        : cordAccessError();
+    }
+    if (coords) {
+      getCurrentLocation();
+    }
+  }, [locationAccess, cordError, coords]);
 
   useEffect(() => {
     if (location) {
-      console.log("hai");
-      debugger;
       if (Object.keys(location).includes("latitude")) {
         // runs when location state has latitude and longtitude values
         getWeather(location)

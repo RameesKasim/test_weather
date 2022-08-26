@@ -79,6 +79,7 @@
 
 .layout {
   min-height: 100vh;
+  min-width: 100vw;
 }
 
 .ant-select-selector {
@@ -93,10 +94,25 @@
     align-items: center;
     justify-content: center;
   }
+  .site-layout-content {
+    min-width: 600px;
+  }
+  .sub-content-container {
+    min-width: 600px;
+  }
 }
 
 @media screen and (max-width: 992px) {
+  .ant-layout-header {
+    width: 100vw;
+  }
   .content-container {
     padding: 10px;
+  }
+  .site-layout-content {
+    width: 100vw;
+  }
+  .sub-content-container {
+    width: 100vw;
   }
 }
